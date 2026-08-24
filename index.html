@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -15,15 +14,32 @@
     <header class="bg-indigo-600 text-white shadow-md p-4 sticky top-0 z-50">
         <div class="max-w-md mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold tracking-wide">💸 Splitt</h1>
-            <span class="text-xs bg-indigo-700 px-2.5 py-1 rounded-full font-medium">PWA Ready</span>
+            <span class="text-xs bg-indigo-700 px-2.5 py-1 rounded-full font-medium">Multi-Currency</span>
         </div>
     </header>
 
     <main class="max-w-md mx-auto p-4 space-y-6">
         
+        <!-- Standardwährung / Abrechnungswährung -->
+        <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">1. Standard-Abrechnungswährung</h2>
+            <select id="baseCurrency" onchange="updateUI()" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-600">
+                <option value="CHF">🇨🇭 CHF (CHF) - Schweizer Franken</option>
+                <option value="EUR">🇪🇺 EUR (€) - Euro</option>
+                <option value="USD">🇺🇸 USD ($) - US-Dollar</option>
+                <option value="GBP">🇬🇧 GBP (£) - Britisches Pfund</option>
+                <option value="CAD">🇨🇦 CAD (CA$) - Kanadischer Dollar</option>
+                <option value="AUD">🇦🇺 AUD (A$) - Australischer Dollar</option>
+                <option value="JPY">🇯🇵 JPY (¥) - Japanischer Yen</option>
+                <option value="SEK">🇸🇪 SEK (kr) - Schwedische Krone</option>
+                <option value="PLN">🇵🇱 PLN (zł) - Polnischer Złoty</option>
+                <option value="INR">🇮🇳 INR (₹) - Indische Rupie</option>
+            </select>
+        </section>
+
         <!-- Teilnehmer Section -->
         <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">1. Teilnehmer hinzufügen</h2>
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">2. Teilnehmer hinzufügen</h2>
             <div class="flex gap-2">
                 <input type="text" id="participantName" placeholder="Name (z.B. Anna)" class="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <button onclick="addParticipant()" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-700 transition">Hinzufügen</button>
@@ -31,29 +47,33 @@
             <div id="participantsList" class="flex flex-wrap gap-2 mt-3"></div>
         </section>
 
-        <!-- Währung & Ausgaben Section -->
+        <!-- Ausgabe hinzufügen Section -->
         <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">2. Währung wählen</h2>
-            <div class="mb-4">
-                <label for="currencySelect" class="block text-xs text-slate-400 mb-1">Standardwährung</label>
-                <select id="currencySelect" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
-                    <option value="EUR">🇪🇺 EUR (€) - Euro</option>
-                    <option value="USD">🇺🇸 USD ($) - US-Dollar</option>
-                    <option value="CHF">🇨🇭 CHF (CHF) - Schweizer Franken</option>
-                    <option value="GBP">🇬🇧 GBP (£) - Britisches Pfund</option>
-                    <option value="CAD">🇨🇦 CAD (CA$) - Kanadischer Dollar</option>
-                    <option value="AUD">🇦🇺 AUD (A$) - Australischer Dollar</option>
-                    <option value="JPY">🇯🇵 JPY (¥) - Japanischer Yen</option>
-                    <option value="SEK">🇸🇪 SEK (kr) - Schwedische Krone</option>
-                    <option value="PLN">🇵🇱 PLN (zł) - Polnischer Złoty</option>
-                    <option value="INR">🇮🇳 INR (₹) - Indische Rupie</option>
-                </select>
-            </div>
-
             <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">3. Ausgabe hinzufügen</h2>
             <div class="space-y-3">
-                <input type="text" id="expenseDesc" placeholder="Wofür? (z.B. Abendessen)" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="number" id="expenseAmount" placeholder="Betrag" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="text" id="expenseDesc" placeholder="Wofür? (z.B. Hotel, Abendessen)" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                
+                <div class="flex gap-2">
+                    <input type="number" id="expenseAmount" placeholder="Betrag" step="0.01" class="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="expenseCurrency" onchange="checkCurrencyMatch()" class="w-28 border border-slate-200 rounded-xl px-2 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
+                        <option value="CHF">CHF</option>
+                        <option value="EUR">EUR</option>
+                        <option value="USD">USD</option>
+                        <option value="GBP">GBP</option>
+                        <option value="CAD">CAD</option>
+                        <option value="AUD">AUD</option>
+                        <option value="JPY">JPY</option>
+                        <option value="SEK">SEK</option>
+                        <option value="PLN">PLN</option>
+                        <option value="INR">INR</option>
+                    </select>
+                </div>
+
+                <!-- Wechselkurs-Feld (wird automatisch eingeblendet, wenn Abweichung zur Standardwährung besteht) -->
+                <div id="exchangeRateContainer" class="bg-slate-50 p-3 rounded-xl border border-slate-200 hidden">
+                    <label class="block text-xs font-medium text-slate-600 mb-1" id="rateLabel">Wechselkurs (1 Fremdwährung = ? Standardwährung)</label>
+                    <input type="number" id="expenseRate" value="1.00" step="0.0001" placeholder="z.B. 0.95" class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
                 
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">Wer hat bezahlt?</label>
@@ -88,14 +108,29 @@
         let participants = [];
         let expenses = [];
 
-        function getCurrencySymbol() {
-            const val = document.getElementById('currencySelect').value;
-            const symbols = {
-                'EUR': '€', 'USD': '$', 'CHF': 'CHF', 'GBP': '£',
-                'CAD': 'CA$', 'AUD': 'A$', 'JPY': '¥', 'SEK': 'kr',
-                'PLN': 'zł', 'INR': '₹'
-            };
-            return symbols[val] || '€';
+        const currencySymbols = {
+            'EUR': '€', 'USD': '$', 'CHF': 'CHF', 'GBP': '£',
+            'CAD': 'CA$', 'AUD': 'A$', 'JPY': '¥', 'SEK': 'kr',
+            'PLN': 'zł', 'INR': '₹'
+        };
+
+        function getBaseCurrency() {
+            return document.getElementById('baseCurrency').value;
+        }
+
+        function checkCurrencyMatch() {
+            const base = getBaseCurrency();
+            const expCurr = document.getElementById('expenseCurrency').value;
+            const container = document.getElementById('exchangeRateContainer');
+            const rateLabel = document.getElementById('rateLabel');
+
+            if (expCurr !== base) {
+                container.classList.remove('hidden');
+                rateLabel.innerText = `Wechselkurs (1 ${expCurr} = ? ${base})`;
+            } else {
+                container.classList.add('hidden');
+                document.getElementById('expenseRate').value = '1.00';
+            }
         }
 
         function addParticipant() {
@@ -117,6 +152,18 @@
         function addExpense() {
             const desc = document.getElementById('expenseDesc').value.trim();
             const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const currency = document.getElementById('expenseCurrency').value;
+            const base = getBaseCurrency();
+            let rate = 1.0;
+
+            if (currency !== base) {
+                rate = parseFloat(document.getElementById('expenseRate').value);
+                if (isNaN(rate) || rate <= 0) {
+                    alert('Bitte einen gültigen Wechselkurs eingeben.');
+                    return;
+                }
+            }
+
             const payer = document.getElementById('expensePayer').value;
 
             if (!desc || isNaN(amount) || amount <= 0 || !payer) {
@@ -124,9 +171,22 @@
                 return;
             }
 
-            expenses.push({ desc, amount, payer });
+            // Umgerechneter Betrag in Standardwährung
+            const amountInBase = amount * rate;
+
+            expenses.push({ 
+                desc, 
+                amount: amountInBase, 
+                origAmount: amount, 
+                origCurr: currency, 
+                rate: rate,
+                payer 
+            });
+
             document.getElementById('expenseDesc').value = '';
             document.getElementById('expenseAmount').value = '';
+            document.getElementById('expenseRate').value = '1.00';
+            checkCurrencyMatch();
             updateUI();
         }
 
@@ -136,6 +196,12 @@
         }
 
         function updateUI() {
+            // Beim Laden Standardwährung im Dropdown der Ausgaben synchronisieren falls leer
+            const base = getBaseCurrency();
+            const expCurrSelect = document.getElementById('expenseCurrency');
+            if(!expCurrSelect.value) expCurrSelect.value = base;
+            checkCurrencyMatch();
+
             // Teilnehmer Chips
             const pList = document.getElementById('participantsList');
             pList.innerHTML = participants.length === 0 ? '<span class="text-xs text-slate-400 italic">Noch keine Teilnehmer.</span>' : '';
@@ -157,25 +223,33 @@
             // Ausgaben anzeigen
             const eList = document.getElementById('expensesList');
             eList.innerHTML = expenses.length === 0 ? '<p class="text-slate-400 italic text-xs">Noch keine Ausgaben erfasst.</p>' : '';
-            const sym = getCurrencySymbol();
+            
+            const baseSym = currencySymbols[base] || base;
+
             expenses.forEach((e, idx) => {
+                let subText = '';
+                if (e.origCurr !== base) {
+                    subText = `<div class="text-[11px] text-indigo-600 font-medium">${e.origAmount.toFixed(2)} ${e.origCurr} (Kurs: ${e.rate})</div>`;
+                }
+
                 eList.innerHTML += `
                     <div class="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-100">
                         <div>
                             <span class="font-medium text-slate-800">${e.desc}</span>
                             <div class="text-xs text-slate-400">Bezahlt von <span class="font-semibold text-slate-600">${e.payer}</span></div>
+                            ${subText}
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="font-bold text-slate-900">${e.amount.toFixed(2)} ${sym}</span>
+                            <span class="font-bold text-slate-900">${e.amount.toFixed(2)} ${baseSym}</span>
                             <button onclick="removeExpense(${idx})" class="text-slate-300 hover:text-red-500 text-sm">×</button>
                         </div>
                     </div>`;
             });
 
-            calculateSettlement(sym);
+            calculateSettlement(baseSym);
         }
 
-        function calculateSettlement(sym) {
+        function calculateSettlement(baseSym) {
             const sList = document.getElementById('settlementList');
             if (participants.length === 0) {
                 sList.innerHTML = '<p class="text-indigo-400 italic text-xs">Füge Teilnehmer hinzu.</p>';
@@ -197,7 +271,6 @@
                 balances[p] -= sharePerPerson;
             });
 
-            // Schuldner und Gläubiger trennen
             let debtors = [];
             let creditors = [];
 
@@ -221,7 +294,7 @@
 
                 transactions.push(`<div class="bg-white/60 p-2.5 rounded-xl border border-indigo-100/50 flex justify-between items-center">
                     <span>👉 <strong class="text-indigo-950">${debt.name}</strong> zahlt an <strong class="text-indigo-950">${credit.name}</strong></span>
-                    <span class="font-bold text-indigo-700">${amt.toFixed(2)} ${sym}</span>
+                    <span class="font-bold text-indigo-700">${amt.toFixed(2)} ${baseSym}</span>
                 </div>`);
 
                 debt.amount -= amt;
@@ -237,6 +310,9 @@
                 sList.innerHTML = transactions.join('');
             }
         }
+
+        // Init beim Start
+        updateUI();
     </script>
 </body>
 </html>
