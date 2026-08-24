@@ -1,1557 +1,242 @@
+
 <!DOCTYPE html>
-<html lang="de" dir="ltr" class="h-full">
+<html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data: blob:;">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FairSplit - Ultimate Masterpiece Edition</title>
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- PWA & Mobile Meta Tags -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#4f46e5">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FairSplit">
-
-<style>
-:root {
---bg: #f8fafc; --surface: #ffffff; --surface-sub: #f1f5f9; --text: #0f172a; --border: #e2e8f0; --input-bg: #f8fafc;
-}
-.dark {
---bg: #0f172a; --surface: rgba(30, 41, 59, 0.85); --surface-sub: rgba(15, 23, 42, 0.6); --text: #f8fafc; --border: rgba(51, 65, 85, 0.6); --input-bg: rgba(15, 23, 42, 0.5);
-}
-body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); }
-.custom-card { background-color: var(--surface); border-color: var(--border); }
-.custom-sub { background-color: var(--surface-sub); border-color: var(--border); color: var(--text); }
-.custom-input { background-color: var(--input-bg); border-color: var(--border); color: var(--text); }
-.fade-in { animation: fadeIn 0.25s ease-out forwards; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-* { -webkit-tap-highlight-color: transparent; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Splitt - Expense Sharing</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body id="appBody" class="dark h-full flex flex-col justify-between transition-colors duration-300 selection:bg-indigo-500 selection:text-white">
-
-<div id="toast" aria-live="polite" role="status" class="fixed top-5 left-1/2 transform -translate-x-1/2 px-4 py-3 rounded-2xl shadow-2xl z-50 text-xs font-bold opacity-0 pointer-events-none flex items-center gap-3 transition-all duration-300 bg-indigo-600 text-white">
-<div class="flex items-center gap-2"><span id="toastIcon"></span><span id="toastMsg"></span></div>
-</div>
-
-<div id="undoBanner" aria-live="polite" role="status" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 px-4 py-3 rounded-2xl shadow-2xl z-50 text-xs font-bold hidden flex items-center gap-4 bg-slate-800 text-white border border-slate-700 fade-in">
-<span id="undoMsg">Element gelöscht</span>
-<button type="button" id="undoBtn" class="bg-indigo-500 hover:bg-indigo-400 text-white px-3 py-1 rounded-xl text-xs transition" data-i18n="undoBtnTxt">Rückgängig</button>
-</div>
-
-<input type="file" id="importFile" accept=".json" class="hidden">
-<input type="file" id="receiptPhotoInput" accept="image/*" class="hidden">
-<input type="file" id="receiptModePhotoInput" accept="image/*" class="hidden">
-
-<div class="max-w-md mx-auto w-full p-4 sm:p-6 custom-card backdrop-blur-xl shadow-2xl shadow-black/50 sm:rounded-3xl sm:my-8 border transition-colors duration-300">
-
-<div class="flex justify-between items-center mb-6 pb-4 border-b" style="border-color: var(--border);">
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-lg font-black shadow-lg shadow-indigo-500/30" aria-hidden="true">⚡</div>
-<div>
-<h1 class="text-xl font-extrabold tracking-tight">FairSplit</h1>
-<span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Ultimate Edition</span>
-</div>
-</div>
-<div class="flex items-center gap-2">
-<button type="button" id="themeBtn" aria-label="Theme umschalten" class="p-2 rounded-xl custom-sub transition text-sm">☀️</button>
-<select id="langSelect" aria-label="Sprache auswählen" class="custom-sub border text-xs rounded-xl px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold cursor-pointer">
-<option value="de">🇩🇪 DE</option><option value="en">🇬🇧 EN</option><option value="fr">🇫🇷 FR</option>
-</select>
-</div>
-</div>
-
-<!-- DASHBOARD & STATS -->
-<div id="dashboardCard" class="mb-6 p-4 bg-gradient-to-br from-indigo-900/60 to-violet-950/60 border border-indigo-500/30 rounded-2xl shadow-lg text-white">
-<div class="grid grid-cols-2 gap-3 text-center mb-3">
-<div class="p-2.5 bg-slate-900/40 rounded-xl border border-indigo-500/10">
-<span data-i18n="dashTotal" class="block text-[10px] font-bold text-indigo-300 uppercase tracking-wider">Gesamtausgaben</span>
-<span id="dashTotalVal" class="text-base font-black">0.00</span>
-</div>
-<div class="p-2.5 bg-slate-900/40 rounded-xl border border-indigo-500/10">
-<span data-i18n="dashPerPerson" class="block text-[10px] font-bold text-indigo-300 uppercase tracking-wider">Ø pro aktiver Person</span>
-<span id="dashPerPersonVal" class="text-base font-black">0.00</span>
-</div>
-</div>
-<div id="categoryStats" class="space-y-1 pt-2 border-t border-indigo-500/20"></div>
-</div>
-
-<div class="mb-6 p-4 custom-sub border rounded-2xl">
-<div class="mb-3">
-<label for="targetCurrInput" data-i18n="lblTargetCurr" class="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Abrechnungs-Währung (Ziel)</label>
-<input type="text" id="targetCurrInput" maxlength="3" value="CHF" aria-label="Abrechnungs-Währung" class="w-full custom-input border rounded-xl px-3 py-2 text-xs font-extrabold text-indigo-400 text-center uppercase focus:ring-2 focus:ring-indigo-500 outline-none">
-</div>
-<div id="exchangeRatesContainer" class="pt-2 border-t space-y-2" style="border-color: var(--border);">
-<span data-i18n="lblExchangeRates" class="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Manuelle Wechselkurse:</span>
-<div id="exchangeRatesList" class="space-y-1.5"></div>
-</div>
-</div>
-
-<!-- 1. PERSONEN -->
-<div class="mb-6">
-<label class="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2" data-i18n="step1">1. Wer ist dabei?</label>
-<div class="flex gap-2 mb-2">
-<input type="text" id="personName" maxlength="20" data-i18n-placeholder="namePh" placeholder="Name" aria-label="Name der Person" class="w-1/2 custom-input border rounded-xl px-3 py-3 text-sm focus:border-indigo-500 outline-none">
-<input type="text" id="paypalName" maxlength="40" data-i18n-placeholder="paypalPh" placeholder="PayPal.me" aria-label="PayPal.me Name" class="w-1/2 custom-input border rounded-xl px-3 py-3 text-sm focus:border-indigo-500 outline-none">
-</div>
-<button type="button" id="addPersonBtn" data-i18n="addPersonBtn" class="w-full bg-indigo-600 text-white px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg hover:bg-indigo-500 transition">Person hinzufügen</button>
-<div class="mt-3 max-h-36 overflow-y-auto pe-1"><ul id="personList" class="flex flex-wrap gap-1.5"></ul></div>
-<div id="archivedPersonsContainer" class="mt-3 hidden pt-3 border-t" style="border-color: var(--border);">
-<span data-i18n="archivedPersonsTitle" class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Archivierte Personen:</span>
-<ul id="archivedPersonList" class="flex flex-wrap gap-1.5"></ul>
-</div>
-</div>
-
-<hr class="my-6" style="border-color: var(--border);">
-
-<!-- 2. AUSGABEN -->
-<div class="mb-6">
-<label class="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2" data-i18n="step2">2. Ausgabe erfassen</label>
-<div class="flex gap-2 mb-4 custom-sub p-1.5 rounded-2xl border">
-<button type="button" id="btnStandard" class="flex-1 bg-indigo-600 text-white py-2 rounded-xl text-xs font-bold shadow-sm transition"><span data-i18n="tabStd">⚡ Standard</span></button>
-<button type="button" id="btnReceipt" class="flex-1 text-slate-400 py-2 rounded-xl text-xs font-semibold transition hover:opacity-80"><span data-i18n="tabRec">🧾 Kassenzettel</span></button>
-</div>
-
-<!-- STANDARD -->
-<div id="modeStandard" class="block fade-in">
-<div class="flex gap-2 mb-2">
-<input type="text" id="stdDesc" maxlength="40" data-i18n-placeholder="descStdPh" placeholder="Wofür?" aria-label="Beschreibung der Ausgabe" class="w-2/3 custom-input border rounded-xl px-3 py-3 text-sm focus:border-indigo-500 outline-none">
-<select id="stdCat" aria-label="Ausgabenkategorie" class="w-1/3 custom-input border rounded-xl px-2 py-3 text-xs outline-none cursor-pointer"></select>
-</div>
-<div class="flex gap-2 mb-2">
-<input type="number" id="stdAmount" step="0.01" data-i18n-placeholder="amountPh" placeholder="Betrag" aria-label="Betrag der Ausgabe" class="w-2/3 custom-input border rounded-xl px-3 py-3 text-sm focus:border-indigo-500 outline-none">
-<input type="text" id="stdCurr" maxlength="3" value="EUR" aria-label="Währung der Ausgabe" class="w-1/3 custom-input border rounded-xl px-2 py-3 text-xs font-extrabold text-center uppercase outline-none">
-</div>
-<div class="mb-3"><select id="stdPayer" aria-label="Wer hat bezahlt?" class="w-full custom-input border rounded-xl px-3 py-3 text-sm cursor-pointer outline-none"></select></div>
-
-<div class="mb-3 flex items-center justify-between p-2.5 custom-sub border rounded-xl">
-<div class="flex items-center gap-2"><span class="text-base" aria-hidden="true">📷</span><span id="stdPhotoLabel" class="text-xs font-semibold text-slate-400" data-i18n="noPhoto">Kein Belegfoto</span></div>
-<div class="flex gap-1">
-<button type="button" id="addPhotoTriggerBtn" class="bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 px-3 py-1.5 rounded-lg text-xs font-bold transition" data-i18n="addPhotoBtn">Foto hinzufügen</button>
-<button type="button" id="stdRemovePhotoBtn" aria-label="Foto entfernen" class="hidden text-rose-400 hover:bg-rose-500/10 px-2 py-1.5 rounded-lg text-xs font-bold transition">×</button>
-</div>
-</div>
-
-<div class="mb-3 p-3 custom-sub border rounded-xl">
-<div class="flex justify-between items-center mb-2">
-<label data-i18n="forWhom" class="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Für wen war das?</label>
-<div class="flex gap-2">
-<button type="button" id="stdCheckAllBtn" class="text-[10px] font-bold text-indigo-400 hover:underline" data-i18n="selectAll">Alle</button>
-<span class="text-slate-600">|</span>
-<button type="button" id="stdCheckNoneBtn" class="text-[10px] font-bold text-slate-400 hover:underline" data-i18n="selectNone">Keine</button>
-</div>
-</div>
-<div id="stdCheckboxes" class="flex flex-wrap gap-2"></div>
-</div>
-
-<div class="flex gap-2">
-<button type="button" id="saveExpBtnElem" data-i18n="saveExpBtn" class="flex-1 bg-emerald-600 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg hover:bg-emerald-500 transition">Ausgabe speichern</button>
-<button type="button" id="cancelEditBtn" data-i18n="cancelEdit" class="hidden flex-1 bg-slate-700 text-slate-300 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-600 transition">Abbrechen</button>
-</div>
-</div>
-
-<!-- KASSENZETTEL -->
-<div id="modeReceipt" class="hidden bg-amber-950/20 border border-amber-800/40 p-4 rounded-2xl fade-in">
-<div class="grid grid-cols-2 gap-2 mb-3">
-<div>
-<label for="receiptPayer" data-i18n="recWhoPaid" class="block text-xs font-bold text-amber-500 mb-1">Wer hat bezahlt?</label>
-<select id="receiptPayer" class="w-full custom-input border border-amber-800/50 rounded-xl px-3 py-2.5 text-sm cursor-pointer outline-none"></select>
-</div>
-<div>
-<label for="receiptCurr" data-i18n="lblExpCurr" class="block text-[10px] font-bold text-amber-500 uppercase tracking-wider mb-1">Währung</label>
-<input type="text" id="receiptCurr" maxlength="3" value="EUR" aria-label="Kassenzettel-Währung" class="w-full custom-input border border-amber-800/50 rounded-xl px-3 py-2 text-xs font-extrabold text-center uppercase outline-none">
-</div>
-</div>
-<div class="mb-3">
-<label for="receiptCat" data-i18n="recCatLabel" class="block text-xs font-bold text-amber-500 mb-1">Kategorie für den Beleg</label>
-<select id="receiptCat" class="w-full custom-input border border-amber-800/50 rounded-xl px-3 py-2.5 text-xs outline-none cursor-pointer"></select>
-</div>
-<div class="mb-3 flex items-center justify-between p-2.5 bg-amber-900/10 border border-amber-800/40 rounded-xl">
-<div class="flex items-center gap-2"><span class="text-base" aria-hidden="true">🧾</span><span id="receiptPhotoLabel" class="text-xs font-semibold text-amber-400/80" data-i18n="noPhoto">Kein Belegfoto</span></div>
-<div class="flex gap-1">
-<button type="button" id="addReceiptPhotoTriggerBtn" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition" data-i18n="addPhotoBtn">Foto hinzufügen</button>
-<button type="button" id="receiptRemovePhotoBtn" aria-label="Foto entfernen" class="hidden text-rose-400 hover:bg-rose-500/10 px-2 py-1.5 rounded-lg text-xs font-bold transition">×</button>
-</div>
-</div>
-<div class="border-t border-amber-800/40 pt-3 mb-2">
-<label data-i18n="recAddItem" class="block text-xs font-bold text-amber-500 mb-2">Position hinzufügen</label>
-<input type="text" id="recDesc" maxlength="40" data-i18n-placeholder="recDescPh" placeholder="Was? (z.B. Cola)" aria-label="Bezeichnung der Position" class="w-full custom-input border border-amber-800/50 rounded-xl px-3 py-2 text-sm mb-2 outline-none">
-<input type="number" id="recAmount" step="0.01" data-i18n-placeholder="pricePh" placeholder="Preis" aria-label="Preis der Position" class="w-full custom-input border border-amber-800/50 rounded-xl px-3 py-2 text-sm mb-3 outline-none">
-<div class="flex justify-between items-center mb-2">
-<label data-i18n="recWhoUsed" class="block text-xs text-amber-500/80 font-medium">Wer hat das genutzt?</label>
-<div class="flex gap-2">
-<button type="button" id="recCheckAllBtn" class="text-[10px] font-bold text-amber-400 hover:underline" data-i18n="selectAll">Alle</button>
-<span class="text-amber-700">|</span>
-<button type="button" id="recCheckNoneBtn" class="text-[10px] font-bold text-amber-500/70 hover:underline" data-i18n="selectNone">Keine</button>
-</div>
-</div>
-<div id="recCheckboxes" class="flex flex-wrap gap-2 mb-3"></div>
-<button type="button" id="addReceiptItemBtn" data-i18n="recAddBtn" class="w-full bg-amber-500 text-amber-950 py-2.5 rounded-xl text-xs font-bold transition">+ Position hinzufügen</button>
-</div>
-<div class="flex justify-between items-center font-bold text-amber-500 mt-4 mb-2 border-t border-amber-800/40 pt-2">
-<span data-i18n="subtotal" class="text-xs">Zwischensumme:</span><span id="receiptTotal" class="text-amber-500 text-sm">0.00</span>
-</div>
-<ul id="tempReceiptList" class="text-xs space-y-1.5 mb-3 border-s-2 border-amber-500 ps-3"></ul>
-<div class="flex gap-2">
-<button type="button" id="saveReceiptBtnElem" data-i18n="recSaveFull" class="flex-1 bg-emerald-600 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider shadow-md hover:bg-emerald-500 transition">Ganzen Beleg speichern</button>
-<button type="button" id="cancelReceiptEditBtn" data-i18n="discard" class="hidden flex-1 bg-slate-700 text-slate-300 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-600 transition">Verwerfen</button>
-</div>
-</div>
-</div>
-
-<hr class="my-6" style="border-color: var(--border);">
-
-<!-- 3. LISTE -->
-<div class="mb-6">
-<div class="flex gap-2 mb-3">
-<input type="text" id="searchInput" placeholder="Suchen..." aria-label="Ausgaben durchsuchen" class="w-2/3 custom-input border rounded-xl px-3 py-2 text-xs outline-none">
-<select id="filterCatSelect" aria-label="Nach Kategorie filtern" class="w-1/3 custom-input border rounded-xl px-2 py-2 text-xs outline-none cursor-pointer"><option value="all" data-i18n="allCategories">Alle Kat.</option></select>
-</div>
-<ul id="expenseList" class="text-sm space-y-2"></ul>
-</div>
-
-<!-- 4. ERGEBNIS & BACKUP -->
-<div>
-<button type="button" id="calculateBtn" data-i18n="calcBtn" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-4 rounded-2xl text-sm font-extrabold tracking-wide mb-3 shadow-xl hover:opacity-95 transition">Wer schuldet wem was?</button>
-<div id="resultBox" class="mt-2 mb-4 p-4 custom-sub rounded-2xl text-sm hidden border border-indigo-500/30 fade-in">
-<h3 class="font-extrabold text-indigo-400 mb-3 text-base flex items-center gap-2"><span aria-hidden="true">💰</span> <span data-i18n="settlementTitle">Abrechnung:</span></h3>
-<ul id="resultList" class="space-y-3 mb-4"></ul>
-<p class="text-[10px] text-slate-400 italic mb-3" data-i18n="paypalDisclaimer">* PayPal-Beträge entsprechen dem Zielwährungs-Abrechnungsbetrag. Abhängig vom Empfängerland können Währungsumrechnungen variieren.</p>
-<button type="button" id="shareResultBtn" class="w-full bg-emerald-600 text-white py-3 rounded-xl text-xs font-extrabold flex justify-center items-center gap-2 hover:bg-emerald-500 transition shadow-md"><span data-i18n="copyWhatsApp">Teilen / Kopieren</span></button>
-</div>
-<div class="grid grid-cols-3 gap-2">
-<button type="button" id="exportBtn" data-i18n="exportBtn" class="custom-sub border py-2.5 rounded-xl text-xs font-bold transition">📤 Export</button>
-<button type="button" id="importBtn" data-i18n="importBtn" class="custom-sub border py-2.5 rounded-xl text-xs font-bold transition">📥 Import</button>
-<button type="button" id="resetBtn" data-i18n="resetBtn" class="bg-rose-500/10 text-rose-500 border border-rose-500/30 py-2.5 rounded-xl text-xs font-bold transition">🗑️ Reset</button>
-</div>
-</div>
-</div>
-
-<div id="photoModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 fade-in">
-<div class="relative max-w-lg w-full bg-slate-900 border border-slate-700 rounded-3xl p-4 overflow-hidden shadow-2xl" id="modalInnerBox">
-<div class="flex justify-between items-center mb-3"><span class="text-xs font-bold text-slate-300 uppercase tracking-wider" data-i18n="photoModalTitle">Belegfoto</span><button type="button" id="closeModalBtn" aria-label="Schließen" class="text-slate-400 hover:text-white font-bold text-lg px-2">×</button></div>
-<div class="flex justify-center items-center overflow-auto max-h-[80vh]"><img id="modalImage" src="" alt="Belegfoto" class="max-w-full rounded-2xl object-contain"></div>
-</div>
-</div>
-
-<script>
-const CURRENT_SCHEMA_VERSION = 2;
-const SUPPORTED_CURRENCIES = new Set(['EUR', 'CHF', 'USD', 'GBP', 'JPY', 'CAD', 'AUD', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF', 'TRY', 'THB']);
-const ZERO_DECIMAL_CURRENCIES = new Set(['JPY', 'HUF']);
-
-const state = {
-    persons: [],
-    expenses: [],
-    receiptItems: [],
-    editingReceiptId: null,
-    language: 'de',
-    currentPhotoBase64: null,
-    currentReceiptPhotoBase64: null,
-    editingExpenseId: null,
-    exchangeRates: {},
-    lastInvolvedIds: [],
-    undoHistory: [],
-    settings: { targetCurrency: 'CHF', theme: 'dark', lastExpenseCurrency: 'EUR' }
-};
-
-const validCategories = new Set(['catFood', 'catTransport', 'catHotel', 'catActivity', 'catShopping', 'catOther']);
-
-let db;
-function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open('FairSplitUltimateDB', 1);
-        request.onupgradeneeded = (e) => {
-            db = e.target.result;
-            if (!db.objectStoreNames.contains('photos')) db.createObjectStore('photos');
-            if (!db.objectStoreNames.contains('appState')) db.createObjectStore('appState');
-        };
-        request.onsuccess = (e) => { db = e.target.result; resolve(); };
-        request.onerror = (e) => reject(e);
-    });
-}
-
-function dbSet(store, key, val) {
-    return new Promise((resolve, reject) => {
-        if (!db) return resolve();
-        const tx = db.transaction(store, 'readwrite');
-        tx.objectStore(store).put(val, key);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-    });
-}
-
-function dbGet(store, key) {
-    return new Promise((resolve) => {
-        if (!db) return resolve(null);
-        const tx = db.transaction(store, 'readonly');
-        const req = tx.objectStore(store).get(key);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => resolve(null);
-    });
-}
-
-function dbDelete(store, key) {
-    return new Promise((resolve, reject) => {
-        if (!db) return resolve();
-        const tx = db.transaction(store, 'readwrite');
-        tx.objectStore(store).delete(key);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-    });
-}
-
-function generateUUID() {
-    return (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
-
-function isValidCurrency(curr) {
-    return SUPPORTED_CURRENCIES.has(String(curr || '').trim().toUpperCase());
-}
-
-function sanitizeCurrency(curr) {
-    const cleaned = String(curr || '').trim().toUpperCase();
-    return isValidCurrency(cleaned) ? cleaned : 'CHF';
-}
-
-function getCurrencyDecimals(curr) {
-    return ZERO_DECIMAL_CURRENCIES.has(sanitizeCurrency(curr)) ? 0 : 2;
-}
-
-function formatAmount(amountCents, curr) {
-    const decimals = getCurrencyDecimals(curr);
-    const divisor = decimals === 0 ? 1 : 100;
-    return (amountCents / divisor).toFixed(decimals);
-}
-
-function createPaypalUrl(username, amountCents, currency) {
-    const decimals = getCurrencyDecimals(currency);
-    const divisor = decimals === 0 ? 1 : 100;
-    const formattedAmount = (amountCents / divisor).toFixed(decimals);
-    return `https://paypal.me/${encodeURIComponent(String(username).replace(/^@/, ''))}/${formattedAmount}${sanitizeCurrency(currency)}`;
-}
-
-const translations = {
-de: {
-dashTotal: "Gesamtausgaben", dashPerPerson: "Ø pro aktiver Person", lblExpCurr: "Währung", lblTargetCurr: "Abrechnungs-Währung (Ziel)",
-lblExchangeRates: "Manuelle Wechselkurse:", noForeignCurrencies: "Keine Fremdwährungen aktiv.", enterRatePh: "Kurs eingeben...",
-step1: "1. Wer ist dabei?", namePh: "Name", paypalPh: "PayPal.me (optional)", addPersonBtn: "Person hinzufügen",
-archivedPersonsTitle: "Archivierte Personen:", step2: "2. Ausgabe erfassen", tabStd: "⚡ Standard", tabRec: "🧾 Kassenzettel",
-descStdPh: "Wofür? (z.B. Abendessen)", amountPh: "Betrag", noPhoto: "Kein Belegfoto", addPhotoBtn: "Foto hinzufügen",
-forWhom: "Für wen war das?", selectAll: "Alle", selectNone: "Keine", saveExpBtn: "Ausgabe speichern", cancelEdit: "Abbrechen",
-recWhoPaid: "Wer hat bezahlt?", recCatLabel: "Kategorie für den Beleg", recAddItem: "Position hinzufügen", recDescPh: "Was? (z.B. Cola)", pricePh: "Preis",
-recWhoUsed: "Wer hat das genutzt?", recAddBtn: "+ Position hinzufügen", subtotal: "Zwischensumme:", recSaveFull: "Ganzen Beleg speichern",
-prevExp: "Bisherige Ausgaben", calcBtn: "Wer schuldet wem was?", settlementTitle: "Abrechnung:", copyWhatsApp: "Teilen / Kopieren",
-resetBtn: "Reset", photoModalTitle: "Belegfoto", toastCopied: "In die Zwischenablage kopiert!", toastReset: "App wurde zurückgesetzt.",
-catFood: "Essen & Trinken", catTransport: "Transport", catHotel: "Unterkunft", catActivity: "Aktivitäten", catShopping: "Einkauf", catOther: "Sonstiges",
-updateExpBtn: "Änderungen speichern", discard: "Verwerfen", exportBtn: "📤 Export", importBtn: "📥 Import",
-editBtnTxt: "Bearbeiten", delBtnTxt: "Löschen", viewPhotoTxt: "Foto ansehen", photoAttachedTxt: "Foto angehängt", restoreTxt: "Wiederherstellen",
-alertCopyError: "Fehler beim Kopieren in die Zwischenablage.", alertImportError: "Fehler beim Lesen oder Validieren der Backup-Datei.",
-alertQuotaError: "Speicherfehler! Daten konnten nicht gesichert werden.", alertPhotoTooLarge: "Das Foto darf maximal 10 MB groß sein.",
-alertInvalidCurrency: "Bitte einen gültigen Währungscode nutzen (z.B. EUR, CHF, USD).",
-paypalDisclaimer: "* PayPal-Beträge entsprechen dem Zielwährungs-Abrechnungsbetrag.",
-toastPersonAdded: "Person hinzugefügt", toastExpSaved: "Ausgabe gespeichert", toastExpUpdated: "Ausgabe aktualisiert",
-toastReceiptSaved: "Beleg gespeichert", toastExportOk: "Export erfolgreich", toastImportOk: "Import erfolgreich",
-alertFillFields: "Bitte alle Felder ausfüllen und Personen wählen.", alertFillReceipt: "Bitte Artikel und Preis eingeben.",
-alertMissingRate: (curr, target) => `Fehlender Wechselkurs: ${curr} → ${target}`,
-alertPersonArchived: (name) => `"${name}" ist an Ausgaben beteiligt. Archivieren? (Historische Schulden bleiben bestehen)`,
-alertDelExpense: "Diese Ausgabe wirklich löschen?", alertDelAll: "ACHTUNG: Alle Daten wirklich löschen?",
-alertDiscardReceipt: "Aktuellen Beleg verwerfen?", paidForText: (payer, count) => `${payer} zahlte für ${count} Person(en)`,
-noExpensesCalc: "Keine Ausgaben vorhanden.", allSettled: "Alles ist ausgeglichen!", paysTo: (from, to) => `${from} zahlt an ${to}`,
-allCategories: "Alle Kat.", undoBtnTxt: "Rückgängig", undoMsg: "Element gelöscht"
-},
-en: {
-dashTotal: "Total Expenses", dashPerPerson: "Avg per Active Person", lblExpCurr: "Currency", lblTargetCurr: "Settlement Currency",
-lblExchangeRates: "Manual Exchange Rates:", noForeignCurrencies: "No foreign currencies active.", enterRatePh: "Enter rate...",
-step1: "1. Who is participating?", namePh: "Name", paypalPh: "PayPal.me", addPersonBtn: "Add Person",
-archivedPersonsTitle: "Archived Persons:", step2: "2. Add Expense", tabStd: "⚡ Standard", tabRec: "🧾 Receipt",
-descStdPh: "What for?", amountPh: "Amount", noPhoto: "No photo", addPhotoBtn: "Add Photo", forWhom: "For whom?",
-selectAll: "All", selectNone: "None", saveExpBtn: "Save Expense", cancelEdit: "Cancel", recWhoPaid: "Who paid?", recCatLabel: "Category",
-recAddItem: "Add Item", recDescPh: "What?", pricePh: "Price", recWhoUsed: "Who used this?", recAddBtn: "+ Add Item", subtotal: "Subtotal:",
-recSaveFull: "Save Full Receipt", prevExp: "Expenses", calcBtn: "Who owes whom?", settlementTitle: "Settlement:", copyWhatsApp: "Share / Copy",
-resetBtn: "Reset", photoModalTitle: "Receipt Photo", toastCopied: "Copied to clipboard!", toastReset: "App reset.", catFood: "Food & Drinks",
-catTransport: "Transport", catHotel: "Accommodation", catActivity: "Activities", catShopping: "Shopping", catOther: "Other",
-updateExpBtn: "Update", discard: "Discard", exportBtn: "📤 Export", importBtn: "📥 Import", editBtnTxt: "Edit", delBtnTxt: "Delete",
-viewPhotoTxt: "View photo", photoAttachedTxt: "Photo attached", restoreTxt: "Restore", alertCopyError: "Copy error.", alertImportError: "Import error.",
-alertQuotaError: "Storage error! Data could not be saved.", alertPhotoTooLarge: "Max 10 MB.", alertInvalidCurrency: "Enter valid currency.",
-paypalDisclaimer: "* PayPal amounts correspond to target currency.", toastPersonAdded: "Person added", toastExpSaved: "Expense saved",
-toastExpUpdated: "Expense updated", toastReceiptSaved: "Receipt saved", toastExportOk: "Export ok", toastImportOk: "Import ok",
-alertFillFields: "Fill out fields correctly.", alertFillReceipt: "Enter item and price.", alertMissingRate: (curr, target) => `Missing rate: ${curr} → ${target}`,
-alertPersonArchived: (name) => `Archive "${name}"?`, alertDelExpense: "Delete expense?", alertDelAll: "Delete all data?", alertDiscardReceipt: "Discard receipt?",
-paidForText: (payer, count) => `${payer} paid for ${count}`, noExpensesCalc: "No expenses.", allSettled: "All settled!", paysTo: (from, to) => `${from} pays ${to}`,
-allCategories: "All cat.", undoBtnTxt: "Undo", undoMsg: "Item deleted"
-},
-fr: {
-dashTotal: "Dépenses totales", dashPerPerson: "Moyenne / personne active", lblExpCurr: "Devise", lblTargetCurr: "Devise de règlement",
-lblExchangeRates: "Taux manuels :", noForeignCurrencies: "Aucune devise étrangère.", enterRatePh: "Entrer le taux...",
-step1: "1. Qui participe ?", namePh: "Nom", paypalPh: "PayPal.me", addPersonBtn: "Ajouter", archivedPersonsTitle: "Personnes archivées :",
-step2: "2. Dépense", tabStd: "⚡ Standard", tabRec: "🧾 Ticket", descStdPh: "Pour quoi ?", amountPh: "Montant", noPhoto: "Pas de photo",
-addPhotoBtn: "Ajouter photo", forWhom: "Pour qui ?", selectAll: "Tous", selectNone: "Aucun", saveExpBtn: "Enregistrer", cancelEdit: "Annuler",
-recWhoPaid: "Qui a payé ?", recCatLabel: "Catégorie", recAddItem: "Ajouter article", recDescPh: "Quoi ?", pricePh: "Prix", recWhoUsed: "Qui ?",
-recAddBtn: "+ Ajouter", subtotal: "Sous-total :", recSaveFull: "Enregistrer ticket", prevExp: "Dépenses", calcBtn: "Règlement",
-settlementTitle: "Règlement :", copyWhatsApp: "Partager", resetBtn: "Réinitialiser", photoModalTitle: "Photo", toastCopied: "Copié dans le presse-papier !",
-toastReset: "Réinitialisé.", catFood: "Nourriture", catTransport: "Transport", catHotel: "Hébergement", catActivity: "Activités",
-catShopping: "Shopping", catOther: "Autre", updateExpBtn: "Mettre à jour", discard: "Ignorer", exportBtn: "📤 Exporter", importBtn: "📥 Importer",
-editBtnTxt: "Modifier", delBtnTxt: "Supprimer", viewPhotoTxt: "Voir photo", photoAttachedTxt: "Photo jointe", restoreTxt: "Restaurer",
-alertCopyError: "Erreur de copie.", alertImportError: "Erreur import", alertQuotaError: "Erreur de stockage !", alertPhotoTooLarge: "Max 10 Mo",
-alertInvalidCurrency: "Devise invalide", paypalDisclaimer: "* Montants en devise cible.", toastPersonAdded: "Ajouté",
-toastExpSaved: "Enregistré", toastExpUpdated: "Mis à jour", toastReceiptSaved: "Ticket enregistré", toastExportOk: "Export réussi",
-toastImportOk: "Import réussi", alertFillFields: "Champs invalides", alertFillReceipt: "Article invalide", alertMissingRate: (c, t) => `Taux manquant: ${c} → ${t}`,
-alertPersonArchived: (n) => `Archiver "${n}"?`, alertDelExpense: "Supprimer ?", alertDelAll: "Tout effacer ?", alertDiscardReceipt: "Abandonner ?",
-paidForText: (p, c) => `${p} a payé pour ${c}`, noExpensesCalc: "Aucune dépense", allSettled: "Tout est réglé !", paysTo: (f, t) => `${f} paie ${t}`,
-allCategories: "Toutes cat.", undoBtnTxt: "Annuler", undoMsg: "Élément supprimé"
-}
-};
-
-const categoryIcons = { catFood: '🍔', catTransport: '🚆', catHotel: '🏨', catActivity: '🎟️', catShopping: '🛍️', catOther: '📦' };
-
-document.addEventListener('DOMContentLoaded', async () => {
-    try { await initDB(); } catch(e) {}
-    await loadData();
-    document.getElementById('langSelect').value = state.language;
-    changeLanguage(false);
-    renderAll();
-    setupEventListeners();
-
-    // Service Worker für PWA-Offline-Modus registrieren
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('ServiceWorker registered!', reg))
-                .catch(err => console.log('ServiceWorker error:', err));
-        });
-    }
-});
-
-function setupEventListeners() {
-    document.getElementById('themeBtn').addEventListener('click', toggleTheme);
-    document.getElementById('langSelect').addEventListener('change', () => changeLanguage());
-    document.getElementById('addPersonBtn').addEventListener('click', addPerson);
-    document.getElementById('btnStandard').addEventListener('click', () => setMode('standard'));
-    document.getElementById('btnReceipt').addEventListener('click', () => setMode('receipt'));
-    document.getElementById('addPhotoTriggerBtn').addEventListener('click', () => triggerPhotoUpload('standard'));
-    document.getElementById('addReceiptPhotoTriggerBtn').addEventListener('click', () => triggerPhotoUpload('receipt'));
-    document.getElementById('stdRemovePhotoBtn').addEventListener('click', () => removePhoto('standard'));
-    document.getElementById('receiptRemovePhotoBtn').addEventListener('click', () => removePhoto('receipt'));
-    document.getElementById('stdCheckAllBtn').addEventListener('click', () => toggleAllCheckboxes('stdCheckboxes', true));
-    document.getElementById('stdCheckNoneBtn').addEventListener('click', () => toggleAllCheckboxes('stdCheckboxes', false));
-    document.getElementById('saveExpBtnElem').addEventListener('click', addStandardExpense);
-    document.getElementById('cancelEditBtn').addEventListener('click', cancelEditing);
-    document.getElementById('recCheckAllBtn').addEventListener('click', () => toggleAllCheckboxes('recCheckboxes', true));
-    document.getElementById('recCheckNoneBtn').addEventListener('click', () => toggleAllCheckboxes('recCheckboxes', false));
-    document.getElementById('addReceiptItemBtn').addEventListener('click', addReceiptItem);
-    document.getElementById('saveReceiptBtnElem').addEventListener('click', saveReceipt);
-    document.getElementById('cancelReceiptEditBtn').addEventListener('click', () => cancelReceiptEditing());
-    document.getElementById('calculateBtn').addEventListener('click', handleCalculateClick);
-    document.getElementById('shareResultBtn').addEventListener('click', shareTextResult);
-    document.getElementById('exportBtn').addEventListener('click', exportBackup);
-    document.getElementById('importBtn').addEventListener('click', triggerImport);
-    document.getElementById('importFile').addEventListener('change', importBackup);
-    document.getElementById('receiptPhotoInput').addEventListener('change', (e) => handlePhotoUpload(e, 'standard'));
-    document.getElementById('receiptModePhotoInput').addEventListener('change', (e) => handlePhotoUpload(e, 'receipt'));
-    document.getElementById('resetBtn').addEventListener('click', resetApp);
-    document.getElementById('closeModalBtn').addEventListener('click', closePhotoModal);
-    document.getElementById('photoModal').addEventListener('click', closePhotoModal);
-    document.getElementById('modalInnerBox').addEventListener('click', (e) => e.stopPropagation());
-    
-    document.getElementById('searchInput').addEventListener('input', renderExpenses);
-    document.getElementById('filterCatSelect').addEventListener('change', renderExpenses);
-    document.getElementById('undoBtn').addEventListener('click', performUndo);
-
-    const targetInput = document.getElementById('targetCurrInput');
-    targetInput.addEventListener('change', updateSettings);
-}
-
-function toggleTheme() {
-    state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark';
-    applyTheme();
-    saveData();
-}
-
-function applyTheme() {
-    const isDark = state.settings.theme === 'dark';
-    document.body.classList.toggle('dark', isDark);
-    document.getElementById('themeBtn').innerText = isDark ? '☀️' : '🌙';
-}
-
-function changeLanguage(save = true) {
-    state.language = document.getElementById('langSelect').value;
-    const t = translations[state.language] || translations['en'];
-    
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (t[key]) el.innerText = t[key];
-    });
-    
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-i18n-placeholder');
-        if (t[key]) el.placeholder = t[key];
-    });
-    
-    populateCategories();
-    renderPersons();
-    renderExpenses();
-    updateExchangeRateUI();
-    if (save) saveData();
-}
-
-function showToast(msg, icon = '✅') {
-    const toast = document.getElementById('toast');
-    document.getElementById('toastMsg').innerText = msg;
-    document.getElementById('toastIcon').innerText = icon;
-    toast.classList.remove('opacity-0', 'pointer-events-none');
-    toast.classList.add('opacity-100');
-    setTimeout(() => {
-        toast.classList.remove('opacity-100');
-        toast.classList.add('opacity-0', 'pointer-events-none');
-    }, 3000);
-}
-
-function addPerson() {
-    const nameInput = document.getElementById('personName');
-    const paypalInput = document.getElementById('paypalName');
-    const name = nameInput.value.trim().slice(0, 20);
-    const rawPaypal = paypalInput.value.trim().replace(/^@/, '');
-    const normalizedPaypal = rawPaypal.replace(/[^a-zA-Z0-9_\.-]/g, '').slice(0, 40);
-    
-    if (name && !state.persons.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-        state.persons.push({ id: generateUUID(), name: name, paypal: normalizedPaypal, archived: false });
-        nameInput.value = '';
-        paypalInput.value = '';
-        saveData();
-        renderPersons();
-        updateDashboard();
-        const t = translations[state.language] || translations['en'];
-        showToast(t.toastPersonAdded);
-    }
-}
-
-function renderPersons() {
-    const active = state.persons.filter(p => !p.archived);
-    const archived = state.persons.filter(p => p.archived);
-
-    const activeIds = new Set(active.map(p => p.id));
-    const filteredLastInvolved = (state.lastInvolvedIds || []).filter(id => activeIds.has(id));
-    if (filteredLastInvolved.length !== (state.lastInvolvedIds || []).length) {
-        state.lastInvolvedIds = filteredLastInvolved;
-        saveData();
-    }
-
-    const list = document.getElementById('personList');
-    list.innerHTML = '';
-    active.forEach(p => {
-        const li = document.createElement('li');
-        li.className = "bg-indigo-500/20 text-indigo-400 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2";
-        li.textContent = p.name + ' ';
-        const btn = document.createElement('button');
-        btn.type = "button";
-        btn.setAttribute('aria-label', `Entferne ${p.name}`);
-        btn.className = "text-rose-400 hover:text-rose-300";
-        btn.textContent = '×';
-        btn.addEventListener('click', () => removePerson(p.id));
-        li.appendChild(btn);
-        list.appendChild(li);
-    });
-
-    const archContainer = document.getElementById('archivedPersonsContainer');
-    const archList = document.getElementById('archivedPersonList');
-    archList.innerHTML = '';
-    const t = translations[state.language] || translations['en'];
-
-    if (archived.length > 0) {
-        archContainer.classList.remove('hidden');
-        archived.forEach(p => {
-            const li = document.createElement('li');
-            li.className = "bg-slate-700/50 text-slate-400 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2";
-            li.textContent = p.name + ' ';
-            const btn = document.createElement('button');
-            btn.type = "button";
-            btn.setAttribute('aria-label', `Stelle ${p.name} wieder her`);
-            btn.className = "text-emerald-400 hover:text-emerald-300";
-            btn.title = t.restoreTxt;
-            btn.textContent = '↺';
-            btn.addEventListener('click', () => restorePerson(p.id));
-            li.appendChild(btn);
-            archList.appendChild(li);
-        });
-    } else {
-        archContainer.classList.add('hidden');
-    }
-
-    const payerSelect = document.getElementById('stdPayer');
-    const receiptPayer = document.getElementById('receiptPayer');
-    payerSelect.innerHTML = '';
-    receiptPayer.innerHTML = '';
-
-    active.forEach(p => {
-        const opt1 = document.createElement('option');
-        opt1.value = p.id;
-        opt1.textContent = p.name;
-        payerSelect.appendChild(opt1);
-
-        const opt2 = document.createElement('option');
-        opt2.value = p.id;
-        opt2.textContent = p.name;
-        receiptPayer.appendChild(opt2);
-    });
-
-    const stdCheckboxes = document.getElementById('stdCheckboxes');
-    const recCheckboxes = document.getElementById('recCheckboxes');
-    stdCheckboxes.innerHTML = '';
-    recCheckboxes.innerHTML = '';
-
-    const useLastSelection = state.lastInvolvedIds && state.lastInvolvedIds.length > 0;
-
-    active.forEach(p => {
-        const label1 = document.createElement('label');
-        label1.className = "flex items-center gap-1.5 custom-sub px-2 py-1 rounded-lg border cursor-pointer";
-        const cb1 = document.createElement('input');
-        cb1.type = 'checkbox';
-        cb1.value = p.id;
-        cb1.className = "std-person-check rounded text-indigo-500";
-        cb1.checked = useLastSelection ? state.lastInvolvedIds.includes(p.id) : true;
-        const span1 = document.createElement('span');
-        span1.className = "text-xs";
-        span1.textContent = p.name;
-        label1.appendChild(cb1);
-        label1.appendChild(span1);
-        stdCheckboxes.appendChild(label1);
-
-        const label2 = document.createElement('label');
-        label2.className = "flex items-center gap-1.5 custom-sub px-2 py-1 rounded-lg border cursor-pointer";
-        const cb2 = document.createElement('input');
-        cb2.type = 'checkbox';
-        cb2.value = p.id;
-        cb2.className = "rec-person-check rounded text-indigo-500";
-        cb2.checked = useLastSelection ? state.lastInvolvedIds.includes(p.id) : true;
-        const span2 = document.createElement('span');
-        span2.className = "text-xs";
-        span2.textContent = p.name;
-        label2.appendChild(cb2);
-        label2.appendChild(span2);
-        recCheckboxes.appendChild(label2);
-    });
-}
-
-function removePerson(id) {
-    const person = state.persons.find(p => p.id === id);
-    if (!person) return;
-    const t = translations[state.language] || translations['en'];
-    const used = state.expenses.some(exp => exp.payerId === person.id || exp.involvedIds.includes(person.id));
-
-    if (used) {
-        if(confirm(t.alertPersonArchived(person.name))) {
-            person.archived = true;
-            saveData();
-            renderPersons();
-            updateDashboard();
-        }
-    } else {
-        state.persons = state.persons.filter(p => p.id !== id);
-        saveData();
-        renderPersons();
-        updateDashboard();
-    }
-}
-
-function restorePerson(id) {
-    const person = state.persons.find(p => p.id === id);
-    if (person) person.archived = false;
-    saveData();
-    renderPersons();
-    updateDashboard();
-}
-
-function toggleAllCheckboxes(containerId, stateVal) {
-    document.querySelectorAll(`#${containerId} input[type="checkbox"]`).forEach(cb => cb.checked = stateVal);
-}
-
-function setMode(mode) {
-    document.getElementById('modeStandard').classList.toggle('hidden', mode !== 'standard');
-    document.getElementById('modeReceipt').classList.toggle('hidden', mode !== 'receipt');
-    document.getElementById('btnStandard').className = mode === 'standard' ? 'flex-1 bg-indigo-600 text-white py-2 rounded-xl text-xs font-bold shadow-sm transition' : 'flex-1 text-slate-400 py-2 rounded-xl text-xs font-semibold transition hover:opacity-80';
-    document.getElementById('btnReceipt').className = mode === 'receipt' ? 'flex-1 bg-indigo-600 text-white py-2 rounded-xl text-xs font-bold shadow-sm transition' : 'flex-1 text-slate-400 py-2 rounded-xl text-xs font-semibold transition hover:opacity-80';
-}
-
-function populateCategories() {
-    const t = translations[state.language] || translations['en'];
-    const cats = ['catFood', 'catTransport', 'catHotel', 'catActivity', 'catShopping', 'catOther'];
-    
-    const stdCat = document.getElementById('stdCat');
-    const receiptCat = document.getElementById('receiptCat');
-    const filterCat = document.getElementById('filterCatSelect');
-    
-    stdCat.innerHTML = '';
-    receiptCat.innerHTML = '';
-    filterCat.innerHTML = `<option value="all">${t.allCategories}</option>`;
-
-    cats.forEach(c => {
-        const opt1 = document.createElement('option');
-        opt1.value = c; opt1.textContent = `${categoryIcons[c]} ${t[c]}`; stdCat.appendChild(opt1);
-        const opt2 = document.createElement('option');
-        opt2.value = c; opt2.textContent = `${categoryIcons[c]} ${t[c]}`; receiptCat.appendChild(opt2);
-        const opt3 = document.createElement('option');
-        opt3.value = c; opt3.textContent = `${categoryIcons[c]} ${t[c]}`; filterCat.appendChild(opt3);
-    });
-}
-
-function triggerPhotoUpload(mode) {
-    document.getElementById(mode === 'receipt' ? 'receiptModePhotoInput' : 'receiptPhotoInput').click();
-}
-
-async function handlePhotoUpload(event, mode) {
-    const file = event.target.files[0];
-    if (file) {
-        const t = translations[state.language] || translations['en'];
-        if (file.size > 10 * 1024 * 1024) {
-            alert(t.alertPhotoTooLarge);
-            event.target.value = '';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                const maxDim = 800;
-
-                if (width > height && width > maxDim) {
-                    height = Math.round((height * maxDim) / width);
-                    width = maxDim;
-                } else if (height > maxDim) {
-                    width = Math.round((width * maxDim) / height);
-                    height = maxDim;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-
-                if (mode === 'receipt') {
-                    state.currentReceiptPhotoBase64 = compressedBase64;
-                    document.getElementById('receiptPhotoLabel').innerText = t.photoAttachedTxt;
-                    document.getElementById('receiptPhotoLabel').classList.replace('text-amber-400/80', 'text-amber-400');
-                    document.getElementById('receiptRemovePhotoBtn').classList.remove('hidden');
-                } else {
-                    state.currentPhotoBase64 = compressedBase64;
-                    document.getElementById('stdPhotoLabel').innerText = t.photoAttachedTxt;
-                    document.getElementById('stdPhotoLabel').classList.replace('text-slate-400', 'text-indigo-400');
-                    document.getElementById('stdRemovePhotoBtn').classList.remove('hidden');
-                }
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-function removePhoto(mode) {
-    const t = translations[state.language] || translations['en'];
-    if (mode === 'receipt') {
-        state.currentReceiptPhotoBase64 = null;
-        document.getElementById('receiptPhotoLabel').innerText = t.noPhoto;
-        document.getElementById('receiptRemovePhotoBtn').classList.add('hidden');
-        document.getElementById('receiptModePhotoInput').value = '';
-    } else {
-        state.currentPhotoBase64 = null;
-        document.getElementById('stdPhotoLabel').innerText = t.noPhoto;
-        document.getElementById('stdRemovePhotoBtn').classList.add('hidden');
-        document.getElementById('receiptPhotoInput').value = '';
-    }
-}
-
-async function showPhotoModal(photoIdOrData) {
-    let imgSrc = photoIdOrData;
-    if (photoIdOrData && !photoIdOrData.startsWith('data:')) {
-        imgSrc = await dbGet('photos', photoIdOrData);
-    }
-    if (imgSrc) {
-        document.getElementById('modalImage').src = imgSrc;
-        document.getElementById('photoModal').classList.remove('hidden');
-    }
-}
-
-function closePhotoModal() {
-    document.getElementById('photoModal').classList.add('hidden');
-    document.getElementById('modalImage').src = "";
-}
-
-async function commitPhotoToDB(base64Data) {
-    if (!base64Data) return null;
-    if (base64Data.startsWith('data:')) {
-        const photoId = generateUUID();
-        await dbSet('photos', photoId, base64Data);
-        return photoId;
-    }
-    return base64Data;
-}
-
-async function addStandardExpense() {
-    const desc = document.getElementById('stdDesc').value.trim();
-    const rawAmount = parseFloat(document.getElementById('stdAmount').value);
-    const rawCurr = document.getElementById('stdCurr').value;
-    const t = translations[state.language] || translations['en'];
-
-    if (!isValidCurrency(rawCurr)) { alert(t.alertInvalidCurrency); return; }
-    const curr = sanitizeCurrency(rawCurr);
-    state.settings.lastExpenseCurrency = curr;
-
-    const payerId = document.getElementById('stdPayer').value;
-    const cat = document.getElementById('stdCat').value;
-    const involvedIds = Array.from(document.querySelectorAll('.std-person-check:checked')).map(cb => cb.value);
-
-    if (!desc || isNaN(rawAmount) || rawAmount <= 0 || !payerId || involvedIds.length === 0) { alert(t.alertFillFields); return; }
-
-    state.lastInvolvedIds = [...involvedIds];
-
-    const multiplier = getCurrencyDecimals(curr) === 0 ? 1 : 100;
-    const amountInCents = Math.round(rawAmount * multiplier);
-    const photoId = await commitPhotoToDB(state.currentPhotoBase64);
-
-    if (state.editingExpenseId) {
-        const idx = state.expenses.findIndex(e => e.id === state.editingExpenseId);
-        if (idx > -1) {
-            if (state.expenses[idx].photo && state.expenses[idx].photo !== photoId) {
-                dbDelete('photos', state.expenses[idx].photo);
-            }
-            state.expenses[idx] = { ...state.expenses[idx], desc, amount: amountInCents, curr, payerId, involvedIds, cat, photo: photoId };
-        }
-        showToast(t.toastExpUpdated);
-    } else {
-        state.expenses.push({ id: generateUUID(), desc, amount: amountInCents, curr, payerId, involvedIds, cat, photo: photoId });
-        showToast(t.toastExpSaved);
-    }
-    
-    cancelEditing();
-    saveData();
-    renderExpenses();
-    updateDashboard();
-}
-
-function editExpense(id) {
-    const exp = state.expenses.find(e => e.id === id);
-    if (!exp) return;
-    if (exp.receiptId) { editReceipt(exp.receiptId); return; }
-
-    setMode('standard');
-    state.editingExpenseId = id;
-    document.getElementById('stdDesc').value = exp.desc;
-    document.getElementById('stdAmount').value = formatAmount(exp.amount, exp.curr);
-    document.getElementById('stdCurr').value = sanitizeCurrency(exp.curr);
-    document.getElementById('stdPayer').value = exp.payerId;
-    document.getElementById('stdCat').value = exp.cat || 'catOther';
-    state.currentPhotoBase64 = exp.photo;
-
-    document.querySelectorAll('.std-person-check').forEach(cb => { cb.checked = exp.involvedIds.includes(cb.value); });
-    const t = translations[state.language] || translations['en'];
-    document.getElementById('saveExpBtnElem').innerText = t.updateExpBtn;
-    document.getElementById('cancelEditBtn').classList.remove('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function cancelEditing() {
-    state.editingExpenseId = null;
-    document.getElementById('stdDesc').value = '';
-    document.getElementById('stdAmount').value = '';
-    document.getElementById('stdCurr').value = state.settings.lastExpenseCurrency || 'EUR';
-    removePhoto('standard');
-    const t = translations[state.language] || translations['en'];
-    document.getElementById('saveExpBtnElem').innerText = t.saveExpBtn;
-    document.getElementById('cancelEditBtn').classList.add('hidden');
-}
-
-function addReceiptItem() {
-    const desc = document.getElementById('recDesc').value.trim();
-    const rawAmount = parseFloat(document.getElementById('recAmount').value);
-    const rawCurr = document.getElementById('receiptCurr').value;
-    const t = translations[state.language] || translations['en'];
-
-    if (!isValidCurrency(rawCurr)) { alert(t.alertInvalidCurrency); return; }
-    const curr = sanitizeCurrency(rawCurr);
-    state.settings.lastExpenseCurrency = curr;
-
-    const involvedIds = Array.from(document.querySelectorAll('.rec-person-check:checked')).map(cb => cb.value);
-
-    if (!desc || isNaN(rawAmount) || rawAmount <= 0 || involvedIds.length === 0) { alert(t.alertFillReceipt); return; }
-    const multiplier = getCurrencyDecimals(curr) === 0 ? 1 : 100;
-    state.receiptItems.push({ desc, amount: Math.round(rawAmount * multiplier), involvedIds });
-    document.getElementById('recDesc').value = '';
-    document.getElementById('recAmount').value = '';
-    renderTempReceipt();
-}
-
-function renderTempReceipt() {
-    const list = document.getElementById('tempReceiptList');
-    list.innerHTML = '';
-    const curr = document.getElementById('receiptCurr').value;
-    state.receiptItems.forEach(item => {
-        const li = document.createElement('li');
-        li.className = "flex justify-between";
-        li.textContent = `${item.desc} (${item.involvedIds.length} Pers.) - ${formatAmount(item.amount, curr)}`;
-        list.appendChild(li);
-    });
-    const totalCents = state.receiptItems.reduce((sum, item) => sum + item.amount, 0);
-    document.getElementById('receiptTotal').innerText = formatAmount(totalCents, curr);
-    document.getElementById('cancelReceiptEditBtn').classList.toggle('hidden', state.receiptItems.length === 0);
-}
-
-function editReceipt(receiptId) {
-    const receiptExpenses = state.expenses.filter(e => e.receiptId === receiptId);
-    if (receiptExpenses.length === 0) return;
-
-    setMode('receipt');
-    state.editingReceiptId = receiptId;
-    state.receiptItems = receiptExpenses.map(e => ({
-        desc: e.desc.replace(/^\[Beleg\]\s*/, ''),
-        amount: e.amount,
-        involvedIds: e.involvedIds
-    }));
-
-    const first = receiptExpenses[0];
-    document.getElementById('receiptPayer').value = first.payerId;
-    document.getElementById('receiptCurr').value = sanitizeCurrency(first.curr);
-    document.getElementById('receiptCat').value = first.cat || 'catFood';
-    state.currentReceiptPhotoBase64 = first.photo;
-
-    renderTempReceipt();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-async function saveReceipt() {
-    const t = translations[state.language] || translations['en'];
-    const payerId = document.getElementById('receiptPayer').value;
-    if (!payerId || state.receiptItems.length === 0) return;
-
-    const rawCurr = document.getElementById('receiptCurr').value;
-    if (!isValidCurrency(rawCurr)) { alert(t.alertInvalidCurrency); return; }
-
-    const curr = sanitizeCurrency(rawCurr);
-    state.settings.lastExpenseCurrency = curr;
-
-    const cat = document.getElementById('receiptCat').value || 'catFood';
-    const receiptId = state.editingReceiptId || generateUUID();
-    const photoId = await commitPhotoToDB(state.currentReceiptPhotoBase64);
-
-    if (state.receiptItems.length > 0) {
-        state.lastInvolvedIds = [...state.receiptItems[state.receiptItems.length - 1].involvedIds];
-    }
-
-    if (state.editingReceiptId) {
-        const oldReceiptExpenses = state.expenses.filter(e => e.receiptId === state.editingReceiptId);
-        oldReceiptExpenses.forEach(oldExp => {
-            if (oldExp.photo && oldExp.photo !== photoId) {
-                dbDelete('photos', oldExp.photo);
-            }
-        });
-        state.expenses = state.expenses.filter(e => e.receiptId !== state.editingReceiptId);
-    }
-
-    state.receiptItems.forEach((item, index) => {
-        state.expenses.push({
-            id: generateUUID(),
-            receiptId: receiptId,
-            desc: `[Beleg] ${item.desc}`,
-            amount: item.amount,
-            curr: curr,
-            payerId: payerId,
-            involvedIds: item.involvedIds,
-            cat: cat,
-            photo: index === 0 ? photoId : null
-        });
-    });
-
-    cancelReceiptEditing(true);
-    saveData();
-    renderExpenses();
-    updateDashboard();
-    showToast(t.toastReceiptSaved);
-}
-
-function cancelReceiptEditing(force = false) {
-    const t = translations[state.language] || translations['en'];
-    if(force || confirm(t.alertDiscardReceipt)) {
-        state.editingReceiptId = null;
-        state.receiptItems = [];
-        document.getElementById('receiptCurr').value = state.settings.lastExpenseCurrency || 'EUR';
-        renderTempReceipt();
-        removePhoto('receipt');
-    }
-}
-
-function renderExpenses() {
-    const t = translations[state.language] || translations['en'];
-    const list = document.getElementById('expenseList');
-    list.innerHTML = '';
-    
-    const searchVal = document.getElementById('searchInput').value.toLowerCase();
-    const filterCat = document.getElementById('filterCatSelect').value;
-
-    const filtered = state.expenses.filter(e => {
-        const matchesSearch = e.desc.toLowerCase().includes(searchVal);
-        const matchesCat = filterCat === 'all' || e.cat === filterCat;
-        return matchesSearch && matchesCat;
-    });
-
-    filtered.forEach(e => {
-        const payerObj = state.persons.find(p => p.id === e.payerId);
-        const payerName = payerObj ? payerObj.name : 'Unbekannt';
-
-        const li = document.createElement('li');
-        li.className = "custom-sub p-3 rounded-xl border flex justify-between items-center fade-in";
-
-        const leftDiv = document.createElement('div');
-        const titleDiv = document.createElement('div');
-        titleDiv.className = "font-bold text-sm flex items-center";
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-md p-4 sticky top-0 z-50">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-wide">💸 Splitt</h1>
+            <span class="text-xs bg-indigo-700 px-2.5 py-1 rounded-full font-medium">PWA Ready</span>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto p-4 space-y-6">
         
-        const descSpan = document.createElement('span');
-        descSpan.textContent = e.desc;
-        titleDiv.appendChild(descSpan);
+        <!-- Teilnehmer Section -->
+        <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">1. Teilnehmer hinzufügen</h2>
+            <div class="flex gap-2">
+                <input type="text" id="participantName" placeholder="Name (z.B. Anna)" class="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button onclick="addParticipant()" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-700 transition">Hinzufügen</button>
+            </div>
+            <div id="participantsList" class="flex flex-wrap gap-2 mt-3"></div>
+        </section>
 
-        if (e.photo) {
-            const photoBtn = document.createElement('button');
-            photoBtn.type = "button";
-            photoBtn.setAttribute('aria-label', t.viewPhotoTxt);
-            photoBtn.className = "ml-2 text-indigo-400";
-            photoBtn.textContent = "📷";
-            photoBtn.addEventListener('click', () => showPhotoModal(e.photo));
-            titleDiv.appendChild(photoBtn);
-        }
+        <!-- Währung & Ausgaben Section -->
+        <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">2. Währung wählen</h2>
+            <div class="mb-4">
+                <label for="currencySelect" class="block text-xs text-slate-400 mb-1">Standardwährung</label>
+                <select id="currencySelect" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
+                    <option value="EUR">🇪🇺 EUR (€) - Euro</option>
+                    <option value="USD">🇺🇸 USD ($) - US-Dollar</option>
+                    <option value="CHF">🇨🇭 CHF (CHF) - Schweizer Franken</option>
+                    <option value="GBP">🇬🇧 GBP (£) - Britisches Pfund</option>
+                    <option value="CAD">🇨🇦 CAD (CA$) - Kanadischer Dollar</option>
+                    <option value="AUD">🇦🇺 AUD (A$) - Australischer Dollar</option>
+                    <option value="JPY">🇯🇵 JPY (¥) - Japanischer Yen</option>
+                    <option value="SEK">🇸🇪 SEK (kr) - Schwedische Krone</option>
+                    <option value="PLN">🇵🇱 PLN (zł) - Polnischer Złoty</option>
+                    <option value="INR">🇮🇳 INR (₹) - Indische Rupie</option>
+                </select>
+            </div>
 
-        const catDiv = document.createElement('div');
-        catDiv.className = "text-[10px] text-indigo-400 font-semibold";
-        catDiv.textContent = `${categoryIcons[e.cat || 'catOther']} ${t[e.cat || 'catOther']}`;
-
-        const subDiv = document.createElement('div');
-        subDiv.className = "text-[10px] text-slate-400";
-        subDiv.textContent = t.paidForText(payerName, e.involvedIds.length);
-
-        leftDiv.appendChild(titleDiv);
-        leftDiv.appendChild(catDiv);
-        leftDiv.appendChild(subDiv);
-
-        const rightDiv = document.createElement('div');
-        rightDiv.className = "text-right";
-        const amtDiv = document.createElement('div');
-        amtDiv.className = "font-black text-indigo-400";
-        amtDiv.textContent = `${formatAmount(e.amount, e.curr)} ${sanitizeCurrency(e.curr)}`;
-
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = "mt-1 flex gap-2 justify-end";
-
-        const editBtn = document.createElement('button');
-        editBtn.type = "button";
-        editBtn.className = "text-[10px] text-blue-400 hover:underline";
-        editBtn.textContent = t.editBtnTxt;
-        editBtn.addEventListener('click', () => editExpense(e.id));
-
-        const delBtn = document.createElement('button');
-        delBtn.type = "button";
-        delBtn.className = "text-[10px] text-rose-500 hover:underline";
-        delBtn.textContent = t.delBtnTxt;
-        delBtn.addEventListener('click', () => deleteExpense(e.id));
-
-        actionsDiv.appendChild(editBtn);
-        actionsDiv.appendChild(delBtn);
-
-        rightDiv.appendChild(amtDiv);
-        rightDiv.appendChild(actionsDiv);
-
-        li.appendChild(leftDiv);
-        li.appendChild(rightDiv);
-        list.appendChild(li);
-    });
-}
-
-async function deleteExpense(id) {
-    const t = translations[state.language] || translations['en'];
-    const exp = state.expenses.find(e => e.id === id);
-    if (!exp) return;
-
-    if (confirm(t.alertDelExpense)) {
-        const itemsToDelete = exp.receiptId ? state.expenses.filter(e => e.receiptId === exp.receiptId) : [exp];
-        
-        for (const item of itemsToDelete) {
-            if (item.photo) {
-                await dbDelete('photos', item.photo);
-            }
-        }
-
-        state.undoHistory.push(itemsToDelete);
-        if (state.undoHistory.length > 5) state.undoHistory.shift();
-
-        state.expenses = state.expenses.filter(e => exp.receiptId ? e.receiptId !== exp.receiptId : e.id !== id);
-        
-        saveData();
-        renderExpenses();
-        updateDashboard();
-        showUndoBanner();
-    }
-}
-
-function showUndoBanner() {
-    const banner = document.getElementById('undoBanner');
-    banner.classList.remove('hidden');
-    setTimeout(() => banner.classList.add('hidden'), 6000);
-}
-
-function performUndo() {
-    if (state.undoHistory.length > 0) {
-        const itemsToRestore = state.undoHistory.pop();
-        state.expenses.push(...itemsToRestore);
-        saveData();
-        renderExpenses();
-        updateDashboard();
-        if (state.undoHistory.length === 0) {
-            document.getElementById('undoBanner').classList.add('hidden');
-        }
-    }
-}
-
-function updateExchangeRateUI() {
-    const container = document.getElementById('exchangeRatesList');
-    container.innerHTML = '';
-    const targetCurr = state.settings.targetCurrency;
-    const t = translations[state.language] || translations['en'];
-    
-    const usedForeign = [...new Set(state.expenses.map(e => sanitizeCurrency(e.curr)).filter(c => c !== targetCurr))];
-    
-    Object.keys(state.exchangeRates).forEach(key => {
-        const [from, to] = key.split('_');
-        if (to !== targetCurr || !usedForeign.includes(from)) {
-            delete state.exchangeRates[key];
-        }
-    });
-
-    if (usedForeign.length === 0) {
-        const span = document.createElement('span');
-        span.className = "text-[10px] text-slate-500 italic";
-        span.textContent = t.noForeignCurrencies;
-        container.appendChild(span);
-        return;
-    }
-
-    usedForeign.forEach(curr => {
-        const key = `${curr}_${targetCurr}`;
-        const val = state.exchangeRates[key] || '';
-        const div = document.createElement('div');
-        div.className = "flex items-center justify-between text-xs";
-        
-        const label = document.createElement('span');
-        label.textContent = `1 ${curr} =`;
-        
-        const input = document.createElement('input');
-        input.type = "number";
-        input.step = "0.001";
-        input.value = val;
-        input.placeholder = t.enterRatePh;
-        input.setAttribute('aria-label', `Wechselkurs für ${curr}`);
-        input.className = "w-24 custom-input border rounded-xl px-2 py-1 text-xs text-center";
-        input.addEventListener('change', (e) => updateRate(key, e.target.value));
-
-        const suffix = document.createElement('span');
-        suffix.textContent = targetCurr;
-
-        div.appendChild(label);
-        div.appendChild(input);
-        div.appendChild(suffix);
-        container.appendChild(div);
-    });
-}
-
-function updateRate(key, val) {
-    const rate = Number(val);
-    if (!Number.isFinite(rate) || rate <= 0 || rate > 1000000) {
-        return;
-    }
-    state.exchangeRates[key] = rate;
-    saveData();
-    updateDashboard();
-}
-
-function updateDashboard() {
-    const targetCurr = state.settings.targetCurrency;
-    let totalCents = 0;
-    let missingRates = [];
-    const catTotals = {};
-
-    state.expenses.forEach(e => {
-        let amt = e.amount;
-        const eCurr = sanitizeCurrency(e.curr);
-        if (eCurr !== targetCurr) {
-            const rate = state.exchangeRates[`${eCurr}_${targetCurr}`];
-            if (!rate || rate <= 0) {
-                if (!missingRates.includes(`${eCurr} → ${targetCurr}`)) {
-                    missingRates.push(`${eCurr} → ${targetCurr}`);
-                }
-                return;
-            }
-            amt = Math.round(amt * rate);
-        }
-        totalCents += amt;
-        catTotals[e.cat || 'catOther'] = (catTotals[e.cat || 'catOther'] || 0) + amt;
-    });
-
-    const activeCount = state.persons.filter(p => !p.archived).length || 1;
-    
-    if (missingRates.length > 0) {
-        document.getElementById('dashTotalVal').innerText = "Nicht vollständig";
-        document.getElementById('dashPerPersonVal').innerText = `⚠️ Kurs fehlt: ${missingRates.join(', ')}`;
-    } else {
-        document.getElementById('dashTotalVal').innerText = `${formatAmount(totalCents, targetCurr)} ${targetCurr}`;
-        document.getElementById('dashPerPersonVal').innerText = `${formatAmount(Math.round(totalCents / activeCount), targetCurr)} ${targetCurr}`;
-    }
-
-    const statsContainer = document.getElementById('categoryStats');
-    statsContainer.innerHTML = '';
-    const t = translations[state.language] || translations['en'];
-
-    Object.entries(catTotals).forEach(([cat, amt]) => {
-        const pct = totalCents ? Math.round((amt / totalCents) * 100) : 0;
-        const div = document.createElement('div');
-        div.className = "text-[10px] flex justify-between items-center text-indigo-200";
-        div.textContent = `${categoryIcons[cat]} ${t[cat]}: ${formatAmount(amt, targetCurr)} ${targetCurr} (${pct}%)`;
-        statsContainer.appendChild(div);
-    });
-}
-
-function updateSettings() {
-    const val = document.getElementById('targetCurrInput').value;
-    if (isValidCurrency(val)) {
-        state.settings.targetCurrency = sanitizeCurrency(val);
-        saveData();
-        updateExchangeRateUI();
-        updateDashboard();
-    } else {
-        alert(translations[state.language].alertInvalidCurrency);
-    }
-}
-
-function handleCalculateClick() {
-    const resultBox = document.getElementById('resultBox');
-    const resultList = document.getElementById('resultList');
-    resultList.innerHTML = '';
-    const t = translations[state.language] || translations['en'];
-    
-    if (state.expenses.length === 0) return;
-
-    let balances = {};
-    state.persons.forEach(p => balances[p.id] = 0);
-    const targetCurr = state.settings.targetCurrency;
-
-    for (const exp of state.expenses) {
-        let convertedCents = exp.amount;
-        const eCurr = sanitizeCurrency(exp.curr);
-        if (eCurr !== targetCurr) {
-            const rate = state.exchangeRates[`${eCurr}_${targetCurr}`];
-            if (!rate || rate <= 0) {
-                alert(t.alertMissingRate(eCurr, targetCurr));
-                return;
-            }
-            convertedCents = Math.round(exp.amount * rate);
-        }
-
-        if (balances[exp.payerId] !== undefined) balances[exp.payerId] += convertedCents;
-        
-        const sortedInvolved = [...exp.involvedIds].sort();
-        const count = sortedInvolved.length;
-        if (count > 0) {
-            const baseShare = Math.trunc(convertedCents / count);
-            let remainder = convertedCents % count;
-            sortedInvolved.forEach((id, idx) => {
-                if (balances[id] !== undefined) balances[id] -= (baseShare + (idx < remainder ? 1 : 0));
-            });
-        }
-    }
-
-    let debtors = [], creditors = [];
-    Object.entries(balances).forEach(([id, bal]) => {
-        if (bal < 0) debtors.push({ id, amount: Math.abs(bal) });
-        else if (bal > 0) creditors.push({ id, amount: bal });
-    });
-
-    debtors.sort((a, b) => b.amount - a.amount);
-    creditors.sort((a, b) => b.amount - a.amount);
-
-    let i = 0, j = 0;
-    while (i < debtors.length && j < creditors.length) {
-        let amt = Math.min(debtors[i].amount, creditors[j].amount);
-        const fromPerson = state.persons.find(p => p.id === debtors[i].id);
-        const toPerson = state.persons.find(p => p.id === creditors[j].id);
-
-        const li = document.createElement('li');
-        li.className = "flex justify-between items-center custom-sub p-2 rounded-lg border";
-        li.textContent = t.paysTo(fromPerson.name, toPerson.name) + `: ${formatAmount(amt, targetCurr)} ${targetCurr}`;
-
-        if (toPerson.paypal) {
-            const a = document.createElement('a');
-            a.href = createPaypalUrl(toPerson.paypal, amt, targetCurr);
-            a.target = "_blank";
-            a.className = "ml-2 text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded";
-            a.textContent = "PayPal";
-            li.appendChild(a);
-        }
-
-        resultList.appendChild(li);
-        debtors[i].amount -= amt;
-        creditors[j].amount -= amt;
-        if (debtors[i].amount === 0) i++;
-        if (creditors[j].amount === 0) j++;
-    }
-
-    resultBox.classList.remove('hidden');
-}
-
-async function shareTextResult() {
-    const t = translations[state.language] || translations['en'];
-    let text = "FairSplit Abrechnung:\n\n";
-    document.querySelectorAll('#resultList li').forEach(li => text += li.innerText.replace('PayPal', '').trim() + "\n");
-    
-    try {
-        if (navigator.share) {
-            await navigator.share({ title: 'FairSplit', text: text });
-        } else {
-            await navigator.clipboard.writeText(text);
-            showToast(t.toastCopied);
-        }
-    } catch (e) {
-        if (e.name !== 'AbortError') {
-            try {
-                await navigator.clipboard.writeText(text);
-                showToast(t.toastCopied);
-            } catch (err) {
-                alert(t.alertCopyError);
-            }
-        }
-    }
-}
-
-async function exportBackup() {
-    const t = translations[state.language] || translations['en'];
-    const photosMap = {};
-    for (const exp of state.expenses) {
-        if (exp.photo && !exp.photo.startsWith('data:')) {
-            const data = await dbGet('photos', exp.photo);
-            if (data) photosMap[exp.photo] = data;
-        }
-    }
-
-    const data = { 
-        schemaVersion: CURRENT_SCHEMA_VERSION, 
-        state: {
-            persons: state.persons,
-            expenses: state.expenses,
-            exchangeRates: state.exchangeRates,
-            lastInvolvedIds: state.lastInvolvedIds,
-            settings: state.settings,
-            language: state.language
-        }, 
-        photos: photosMap,
-        updatedAt: new Date().toISOString() 
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const fileName = `FairSplit_Backup_${new Date().toISOString().slice(0,10)}.json`;
-    const file = new File([blob], fileName, { type: 'application/json' });
-
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-            await navigator.share({
-                files: [file],
-                title: 'FairSplit Backup',
-                text: 'Backup-Datei deiner FairSplit App'
-            });
-            showToast(t.toastExportOk);
-            return;
-        } catch (err) {
-            if (err.name === 'AbortError') return;
-        }
-    }
-
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    showToast(t.toastExportOk);
-}
-
-function triggerImport() { document.getElementById('importFile').click(); }
-
-function resetUIState() {
-    setMode('standard');
-    document.getElementById('resultBox').classList.add('hidden');
-    document.getElementById('searchInput').value = '';
-    document.getElementById('filterCatSelect').value = 'all';
-    document.getElementById('undoBanner').classList.add('hidden');
-    removePhoto('standard');
-    removePhoto('receipt');
-    cancelEditing();
-    state.receiptItems = [];
-    renderTempReceipt();
-    state.undoHistory = [];
-}
-
-function normalizeBackupData(data) {
-    if (!data || typeof data !== 'object') throw new Error("Ungültiges Format");
-    const schemaVersion = Number(data.schemaVersion || 1);
-    if (schemaVersion > CURRENT_SCHEMA_VERSION) throw new Error("Neuere Backup-Version nicht unterstützt");
-
-    const src = data.state || data;
-    const persons = Array.isArray(src.persons) ? src.persons.map(p => ({
-        id: String(p.id || generateUUID()),
-        name: String(p.name || '').trim().slice(0, 20),
-        paypal: String(p.paypal || '').replace(/^@/, '').slice(0, 40),
-        archived: !!p.archived
-    })).filter(p => p.name) : [];
-
-    const validPersonIds = new Set(persons.map(p => p.id));
-
-    const expenses = Array.isArray(src.expenses) ? src.expenses.map(e => {
-        const amount = Number(e.amount || 0);
-        if (!Number.isInteger(amount) || amount <= 0) return null;
-        const payerId = String(e.payerId || '');
-        if (!validPersonIds.has(payerId)) return null;
-
-        const involvedIds = Array.isArray(e.involvedIds) ? e.involvedIds.map(String).filter(id => validPersonIds.has(id)) : [];
-        if (involvedIds.length === 0) return null;
-
-        return {
-            id: String(e.id || generateUUID()),
-            receiptId: e.receiptId ? String(e.receiptId) : null,
-            desc: String(e.desc || '').trim().slice(0, 40),
-            amount,
-            curr: sanitizeCurrency(e.curr),
-            payerId,
-            involvedIds,
-            cat: validCategories.has(e.cat) ? e.cat : 'catOther',
-            photo: e.photo ? String(e.photo) : null
-        };
-    }).filter(Boolean) : [];
-
-    const exchangeRates = {};
-    if (src.exchangeRates && typeof src.exchangeRates === 'object') {
-        for (const [key, value] of Object.entries(src.exchangeRates)) {
-            const rate = Number(value);
-            if (/^[A-Z]{3}_[A-Z]{3}$/.test(key) && Number.isFinite(rate) && rate > 0 && rate <= 1000000) {
-                exchangeRates[key] = rate;
-            }
-        }
-    }
-
-    const lastInvolvedIds = Array.isArray(src.lastInvolvedIds) ? src.lastInvolvedIds.map(String).filter(id => validPersonIds.has(id)) : [];
-
-    return {
-        persons,
-        expenses,
-        exchangeRates,
-        lastInvolvedIds,
-        settings: {
-            targetCurrency: sanitizeCurrency(src.settings?.targetCurrency),
-            theme: src.settings?.theme === 'light' ? 'light' : 'dark',
-            lastExpenseCurrency: sanitizeCurrency(src.settings?.lastExpenseCurrency)
-        },
-        language: ['de', 'en', 'fr'].includes(src.language) ? src.language : 'de'
-    };
-}
-
-async function importBackup(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = async function(evt) {
-            try {
-                const parsed = JSON.parse(evt.target.result);
-                const normalized = normalizeBackupData(parsed);
-
-                if (parsed.photos && typeof parsed.photos === 'object') {
-                    for (const [id, base64] of Object.entries(parsed.photos)) {
-                        if (typeof base64 === 'string' && base64.startsWith('data:image/')) {
-                            await dbSet('photos', id, base64);
-                        }
-                    }
-                }
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">3. Ausgabe hinzufügen</h2>
+            <div class="space-y-3">
+                <input type="text" id="expenseDesc" placeholder="Wofür? (z.B. Abendessen)" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="number" id="expenseAmount" placeholder="Betrag" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 
-                resetUIState();
-                Object.assign(state, normalized);
-                await saveData();
-                renderAll();
-                const t = translations[state.language] || translations['en'];
-                showToast(t.toastImportOk);
-            } catch (err) {
-                const t = translations[state.language] || translations['en'];
-                alert(t.alertImportError);
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Wer hat bezahlt?</label>
+                    <select id="expensePayer" class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Bitte erst Teilnehmer hinzufügen</option>
+                    </select>
+                </div>
+
+                <button onclick="addExpense()" class="w-full bg-slate-900 text-white py-3 rounded-xl text-sm font-medium hover:bg-slate-800 transition shadow-sm">Ausgabe speichern</button>
+            </div>
+        </section>
+
+        <!-- Ausgabenliste -->
+        <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Bisherige Ausgaben</h2>
+            <div id="expensesList" class="space-y-2 text-sm text-slate-600">
+                <p class="text-slate-400 italic text-xs">Noch keine Ausgaben erfasst.</p>
+            </div>
+        </section>
+
+        <!-- Abrechnung / Ergebnis -->
+        <section class="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl shadow-sm">
+            <h2 class="text-sm font-semibold text-indigo-900 uppercase tracking-wider mb-3">Abrechnung & Ausgleich</h2>
+            <div id="settlementList" class="space-y-2 text-sm text-indigo-950 font-medium">
+                <p class="text-indigo-400 italic text-xs">Füge Teilnehmer und Ausgaben hinzu, um den Ausgleich zu sehen.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        let participants = [];
+        let expenses = [];
+
+        function getCurrencySymbol() {
+            const val = document.getElementById('currencySelect').value;
+            const symbols = {
+                'EUR': '€', 'USD': '$', 'CHF': 'CHF', 'GBP': '£',
+                'CAD': 'CA$', 'AUD': 'A$', 'JPY': '¥', 'SEK': 'kr',
+                'PLN': 'zł', 'INR': '₹'
+            };
+            return symbols[val] || '€';
+        }
+
+        function addParticipant() {
+            const nameInput = document.getElementById('participantName');
+            const name = nameInput.value.trim();
+            if (name && !participants.includes(name)) {
+                participants.push(name);
+                nameInput.value = '';
+                updateUI();
             }
-        };
-        reader.readAsText(file);
-    }
-    e.target.value = '';
-}
+        }
 
-async function resetApp() {
-    const t = translations[state.language] || translations['en'];
-    if (confirm(t.alertDelAll)) {
-        resetUIState();
-        if (db) {
-            db.close();
-            await new Promise(res => {
-                const req = indexedDB.deleteDatabase('FairSplitUltimateDB');
-                req.onsuccess = () => res();
-                req.onerror = () => res();
+        function removeParticipant(name) {
+            participants = participants.filter(p => p !== name);
+            expenses = expenses.filter(e => e.payer !== name);
+            updateUI();
+        }
+
+        function addExpense() {
+            const desc = document.getElementById('expenseDesc').value.trim();
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const payer = document.getElementById('expensePayer').value;
+
+            if (!desc || isNaN(amount) || amount <= 0 || !payer) {
+                alert('Bitte alle Felder korrekt ausfüllen.');
+                return;
+            }
+
+            expenses.push({ desc, amount, payer });
+            document.getElementById('expenseDesc').value = '';
+            document.getElementById('expenseAmount').value = '';
+            updateUI();
+        }
+
+        function removeExpense(index) {
+            expenses.splice(index, 1);
+            updateUI();
+        }
+
+        function updateUI() {
+            // Teilnehmer Chips
+            const pList = document.getElementById('participantsList');
+            pList.innerHTML = participants.length === 0 ? '<span class="text-xs text-slate-400 italic">Noch keine Teilnehmer.</span>' : '';
+            participants.forEach(p => {
+                pList.innerHTML += `
+                    <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-medium">
+                        ${p}
+                        <button onclick="removeParticipant('${p}')" class="text-slate-400 hover:text-red-500 font-bold ml-1">×</button>
+                    </span>`;
             });
+
+            // Payer Dropdown aktualisieren
+            const payerSelect = document.getElementById('expensePayer');
+            payerSelect.innerHTML = participants.length === 0 ? '<option value="">Bitte erst Teilnehmer hinzufügen</option>' : '';
+            participants.forEach(p => {
+                payerSelect.innerHTML += `<option value="${p}">${p}</option>`;
+            });
+
+            // Ausgaben anzeigen
+            const eList = document.getElementById('expensesList');
+            eList.innerHTML = expenses.length === 0 ? '<p class="text-slate-400 italic text-xs">Noch keine Ausgaben erfasst.</p>' : '';
+            const sym = getCurrencySymbol();
+            expenses.forEach((e, idx) => {
+                eList.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-100">
+                        <div>
+                            <span class="font-medium text-slate-800">${e.desc}</span>
+                            <div class="text-xs text-slate-400">Bezahlt von <span class="font-semibold text-slate-600">${e.payer}</span></div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-slate-900">${e.amount.toFixed(2)} ${sym}</span>
+                            <button onclick="removeExpense(${idx})" class="text-slate-300 hover:text-red-500 text-sm">×</button>
+                        </div>
+                    </div>`;
+            });
+
+            calculateSettlement(sym);
         }
-        location.reload();
-    }
-}
 
-async function saveData() {
-    try {
-        const persistentPayload = {
-            persons: state.persons,
-            expenses: state.expenses,
-            exchangeRates: state.exchangeRates,
-            lastInvolvedIds: state.lastInvolvedIds,
-            settings: state.settings,
-            language: state.language,
-            schemaVersion: CURRENT_SCHEMA_VERSION,
-            updatedAt: new Date().toISOString()
-        };
-        await dbSet('appState', 'currentState', persistentPayload);
-    } catch (e) {
-        const t = translations[state.language] || translations['en'];
-        alert(t.alertQuotaError);
-    }
-}
+        function calculateSettlement(sym) {
+            const sList = document.getElementById('settlementList');
+            if (participants.length === 0) {
+                sList.innerHTML = '<p class="text-indigo-400 italic text-xs">Füge Teilnehmer hinzu.</p>';
+                return;
+            }
 
-async function loadData() {
-    try {
-        let data = await dbGet('appState', 'currentState');
-        if (data) {
-            const normalized = normalizeBackupData(data);
-            Object.assign(state, normalized);
+            let balances = {};
+            participants.forEach(p => balances[p] = 0);
+
+            let totalSpent = 0;
+            expenses.forEach(e => {
+                totalSpent += e.amount;
+                balances[e.payer] += e.amount;
+            });
+
+            const sharePerPerson = participants.length > 0 ? totalSpent / participants.length : 0;
+
+            participants.forEach(p => {
+                balances[p] -= sharePerPerson;
+            });
+
+            // Schuldner und Gläubiger trennen
+            let debtors = [];
+            let creditors = [];
+
+            for (let p in balances) {
+                if (balances[p] < -0.01) debtors.push({ name: p, amount: -balances[p] });
+                if (balances[p] > 0.01) creditors.push({ name: p, amount: balances[p] });
+            }
+
+            sList.innerHTML = '';
+            if (expenses.length === 0) {
+                sList.innerHTML = '<p class="text-indigo-400 italic text-xs">Keine Transaktionen vorhanden.</p>';
+                return;
+            }
+
+            let transactions = [];
+            let i = 0, j = 0;
+            while (i < debtors.length && j < creditors.length) {
+                let debt = debtors[i];
+                let credit = creditors[j];
+                let amt = Math.min(debt.amount, credit.amount);
+
+                transactions.push(`<div class="bg-white/60 p-2.5 rounded-xl border border-indigo-100/50 flex justify-between items-center">
+                    <span>👉 <strong class="text-indigo-950">${debt.name}</strong> zahlt an <strong class="text-indigo-950">${credit.name}</strong></span>
+                    <span class="font-bold text-indigo-700">${amt.toFixed(2)} ${sym}</span>
+                </div>`);
+
+                debt.amount -= amt;
+                credit.amount -= amt;
+
+                if (debt.amount < 0.01) i++;
+                if (credit.amount < 0.01) j++;
+            }
+
+            if (transactions.length === 0) {
+                sList.innerHTML = '<p class="text-indigo-700 italic text-xs">Alles ausgeglichen! Niemand schuldet jemandem etwas.</p>';
+            } else {
+                sList.innerHTML = transactions.join('');
+            }
         }
-    } catch (e) {}
-}
-
-function renderAll() {
-    document.getElementById('targetCurrInput').value = state.settings.targetCurrency;
-    document.getElementById('stdCurr').value = state.settings.lastExpenseCurrency || 'EUR';
-    document.getElementById('receiptCurr').value = state.settings.lastExpenseCurrency || 'EUR';
-    document.getElementById('langSelect').value = state.language;
-    applyTheme();
-    renderPersons();
-    renderExpenses();
-    updateExchangeRateUI();
-    updateDashboard();
-}
-</script>
+    </script>
 </body>
 </html>
